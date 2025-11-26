@@ -1,23 +1,31 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { FaSearch } from 'react-icons/fa';
 
 const SearchBar = ({ initialSearch }) => {
   const [search, setSearch] = useState(initialSearch || '');
   const router = useRouter();
+  const isMounted = useRef(false);
 
   useEffect(() => {
+
+    if (!isMounted.current) {
+      isMounted.current = true;
+      return;
+    }
+
     const delayDebounceFn = setTimeout(() => {
-      
+
       if (search) {
         router.push(`/products?search=${search}`);
-      } else {
+      } 
+    
+      else if (window.location.pathname === '/products') {
         router.push(`/products`);
       }
-
-    }, 500); 
+    }, 500);
 
     return () => clearTimeout(delayDebounceFn);
   }, [search, router]);
