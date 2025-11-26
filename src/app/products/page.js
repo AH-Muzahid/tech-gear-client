@@ -1,10 +1,10 @@
 import ProductCard from "@/components/products/ProductCard";
-import { FaSearch } from "react-icons/fa";
 import SearchBar from "@/components/products/SearchBar";
 
-// 
+
+export const dynamic = "force-dynamic";
+
 async function getProducts(searchTerm = '') {
-  // test
   const url = searchTerm
     ? `https://tech-gear-server-gmu3jry2o-ah-muzahids-projects.vercel.app//products?search=${searchTerm}`
     : 'https://tech-gear-server-gmu3jry2o-ah-muzahids-projects.vercel.app//products';
@@ -18,8 +18,9 @@ async function getProducts(searchTerm = '') {
   return res.json();
 }
 
+export default async function ProductsPage(props) {
 
-export default async function ProductsPage({ searchParams }) {
+  const searchParams = await props.searchParams;
   const searchTerm = searchParams?.search || '';
 
   let products = [];
@@ -40,7 +41,6 @@ export default async function ProductsPage({ searchParams }) {
             Explore our premium collection of tech gadgets. Find the best tools to upgrade your workflow.
           </p>
 
-          {/* Search Bar */}
           <SearchBar initialSearch={searchTerm} />
         </div>
 
