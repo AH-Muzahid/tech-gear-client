@@ -18,7 +18,7 @@ const Benefits = () => {
         </p>
       </div>
       <div className="max-w-[1240px] mx-auto px-4">
-        <div className="grid grid-cols-2 lg:grid-cols-2 gap-4 md:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
           {benefits.map((item) => (
             <div key={item.id} className="flex flex-col items-center text-center p-6 border border-gray-100 rounded-xl hover:shadow-xl transition-shadow duration-300 cursor-pointer group">
               <div className="text-blue-600 mb-4 group-hover:scale-110 transition-transform duration-300">

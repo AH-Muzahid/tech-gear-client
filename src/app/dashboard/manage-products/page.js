@@ -1,23 +1,27 @@
 'use client';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import Image from 'next/image';
 import { FaTrash, FaEdit, FaBoxOpen } from 'react-icons/fa';
+import { API_ENDPOINTS } from "@/lib/api";
 
 export default function ManageProductsPage() {
+  const { data: session } = useSession();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch('https://tech-gear-server-gmu3jry2o-ah-muzahids-projects.vercel.app//products');
+        const res = await fetch(API_ENDPOINTS.products());
         const data = await res.json();
         setProducts(data);
         setLoading(false);
       } catch (error) {
-        console.error('Failed to fetch products', error);
+        setError('Failed to load products');
         setLoading(false);
       }
     };
@@ -29,21 +33,32 @@ export default function ManageProductsPage() {
     const confirmDelete = window.confirm("Are you sure you want to delete this product?");
     if (!confirmDelete) return;
 
+    if (!session) {
+      setError('You must be logged in to delete products');
+      return;
+    }
+
     try {
-      const res = await fetch(`https://tech-gear-server-gmu3jry2o-ah-muzahids-projects.vercel.app//products/${id}`, {
+      const headers = {};
+      if (session.accessToken) {
+        headers.Authorization = `Bearer ${session.accessToken}`;
+      }
+
+      const res = await fetch(API_ENDPOINTS.productById(id), {
         method: 'DELETE',
+        headers,
       });
 
-      if (res.ok) {
+      const data = await res.json();
 
+      if (res.ok) {
         setProducts(products.filter((product) => product._id !== id));
-        alert('Product deleted successfully');
+        setError('');
       } else {
-        alert('Failed to delete product');
+        setError(data.message || 'Failed to delete product');
       }
     } catch (error) {
-      console.error(error);
-      alert('Error deleting product');
+      setError('Error deleting product. Please try again.');
     }
   };
 
@@ -64,6 +79,13 @@ export default function ManageProductsPage() {
             Total Items: {products.length}
           </span>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-4 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded">
+            <p className="font-medium">{error}</p>
+          </div>
+        )}
 
         {/* Table Container */}
         <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">

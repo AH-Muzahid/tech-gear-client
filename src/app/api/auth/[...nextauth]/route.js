@@ -1,9 +1,11 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
-import { connectDB } from "@/lib/db"; 
+import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import bcrypt from "bcryptjs";
+import * as jose from "jose";
+import logger from "@/lib/logger";
 
 const handler = NextAuth({
   providers: [
@@ -18,32 +20,24 @@ const handler = NextAuth({
         const { email, password } = credentials;
 
         try {
-          // connect to the database
           await connectDB();
-          // console.log(" NextAuth DB Connected");
 
-          // find the user by email
           const user = await User.findOne({ email });
-          
-          if (!user) {
-            // console.log("User Not Found in Database:", email);
-            return null; 
-          }
-          // console.log(" User Found:", user.email);
 
-          // compare the password
+          if (!user) {
+            return null;
+          }
+
           const passwordsMatch = await bcrypt.compare(password, user.password);
 
           if (!passwordsMatch) {
-            // console.log("Password did NOT match");
-            return null; 
+            return null;
           }
 
-          // console.log(" Login Successful!");
-          return user; 
+          return user;
 
         } catch (error) {
-          // console.log("Auth Error: ", error);
+          logger.error("Auth Error:", error);
           return null;
         }
       },
@@ -58,18 +52,39 @@ const handler = NextAuth({
   },
   callbacks: {
     async jwt({ token, user }) {
-        if (user) {
-            token.role = user.role;
-            token.picture = user.image;
+      if (user) {
+        token.role = user.role;
+        token.picture = user.image;
+        token.id = user._id?.toString() || user.id;
+
+        // Create a JWT token that can be verified by the server
+        if (process.env.NEXTAUTH_SECRET) {
+          try {
+            const secret = new TextEncoder().encode(process.env.NEXTAUTH_SECRET);
+            token.accessToken = await new jose.SignJWT({
+              id: token.id,
+              email: user.email,
+              role: user.role || 'user',
+            })
+              .setProtectedHeader({ alg: 'HS256' })
+              .setIssuedAt()
+              .setExpirationTime('7d')
+              .sign(secret);
+          } catch (error) {
+            logger.error('Error creating access token:', error);
+          }
         }
-        return token;
+      }
+      return token;
     },
     async session({ session, token }) {
-        if (session?.user) {
-            session.user.role = token.role;
-            session.user.image = token.picture;
-        }
-        return session;
+      if (session?.user) {
+        session.user.role = token.role;
+        session.user.image = token.picture;
+        session.user.id = token.id;
+        session.accessToken = token.accessToken;
+      }
+      return session;
     }
   }
 });

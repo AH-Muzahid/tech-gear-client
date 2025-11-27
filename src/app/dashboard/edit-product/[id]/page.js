@@ -2,13 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { FaCloudUploadAlt, FaTag, FaMoneyBillWave, FaAlignLeft, FaLink, FaArrowLeft } from 'react-icons/fa';
 import Link from 'next/link';
+import { API_ENDPOINTS } from "@/lib/api";
 
 export default function EditProductPage({ params }) {
     const router = useRouter();
+    const { data: session } = useSession();
     const { id } = params;
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
     const [formData, setFormData] = useState({
         title: '',
@@ -17,21 +21,25 @@ export default function EditProductPage({ params }) {
         image: ''
     });
 
-    //load product data
     useEffect(() => {
         const fetchProduct = async () => {
             try {
-                const res = await fetch(`https://tech-gear-server-gmu3jry2o-ah-muzahids-projects.vercel.app//products/${id}`);
+                const res = await fetch(API_ENDPOINTS.productById(id));
+
+                if (!res.ok) {
+                    setError('Failed to load product details');
+                    return;
+                }
+
                 const data = await res.json();
-                //fill form data
                 setFormData({
-                    title: data.title,
-                    price: data.price,
-                    description: data.description,
-                    image: data.image
+                    title: data.title || '',
+                    price: data.price || '',
+                    description: data.description || '',
+                    image: data.image || ''
                 });
             } catch (error) {
-                console.error("Error fetching product", error);
+                setError('Failed to load product details');
             }
         };
 
@@ -43,30 +51,42 @@ export default function EditProductPage({ params }) {
         setFormData({ ...formData, [name]: value });
     };
 
-    // update product
     const handleUpdate = async (e) => {
         e.preventDefault();
         setLoading(true);
+        setError('');
+
+        if (!session) {
+            setError('You must be logged in to update products');
+            setLoading(false);
+            return;
+        }
 
         try {
-            const res = await fetch(`https://tech-gear-server-gmu3jry2o-ah-muzahids-projects.vercel.app//products/${id}`, {
+            const headers = {
+                'Content-Type': 'application/json',
+            };
+
+            if (session.accessToken) {
+                headers.Authorization = `Bearer ${session.accessToken}`;
+            }
+
+            const res = await fetch(API_ENDPOINTS.productById(id), {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers,
                 body: JSON.stringify(formData),
             });
 
+            const data = await res.json();
+
             if (res.ok) {
-                alert('✅ Product Updated Successfully!');
                 router.push('/dashboard/manage-products');
                 router.refresh();
             } else {
-                alert('❌ Failed to update product');
+                setError(data.message || 'Failed to update product. Please try again.');
             }
         } catch (error) {
-            console.error(error);
-            alert('Something went wrong!');
+            setError('Something went wrong! Please try again.');
         } finally {
             setLoading(false);
         }
@@ -85,6 +105,13 @@ export default function EditProductPage({ params }) {
                         <p className="text-slate-400">Update the details of your item.</p>
                     </div>
                 </div>
+
+                {/* Error Message */}
+                {error && (
+                    <div className="mx-8 mt-4 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded">
+                        <p className="font-medium">{error}</p>
+                    </div>
+                )}
 
                 <form onSubmit={handleUpdate} className="p-8 space-y-6">
                     {/* Title */}

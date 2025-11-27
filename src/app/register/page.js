@@ -4,6 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FaUser, FaEnvelope, FaLock } from 'react-icons/fa';
+import { API_ENDPOINTS } from "@/lib/api";
+import Swal from 'sweetalert2';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -17,15 +19,20 @@ export default function RegisterPage() {
     setError('');
 
     try {
-      //   call the registration API
-      const res = await fetch('https://tech-gear-server-gmu3jry2o-ah-muzahids-projects.vercel.app//register', {
+      const res = await fetch(API_ENDPOINTS.register(), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
 
       if (res.ok) {
-        alert('✅ Registration Successful! Please login.');
+        await Swal.fire({
+          title: 'Success!',
+          text: 'Registration successful! Please login.',
+          icon: 'success',
+          confirmButtonText: 'Go to Login',
+          confirmButtonColor: '#2563eb',
+        });
         router.push('/login');
       } else {
         const data = await res.json();

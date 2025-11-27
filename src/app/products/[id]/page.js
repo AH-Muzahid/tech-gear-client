@@ -1,11 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { FaArrowLeft, FaShoppingCart, FaTag } from "react-icons/fa";
-
+import { API_ENDPOINTS } from "@/lib/api";
 
 async function getProduct(id) {
-
-  const res = await fetch(`https://tech-gear-server-gmu3jry2o-ah-muzahids-projects.vercel.app//products/${id}`, {
+  const res = await fetch(API_ENDPOINTS.productById(id), {
     cache: 'no-store',
   });
 

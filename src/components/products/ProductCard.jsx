@@ -3,6 +3,10 @@ import Link from "next/link";
 import { FaShoppingCart } from "react-icons/fa";
 
 const ProductCard = ({ product }) => {
+  if (!product || !product._id || !product.title || product.price === undefined || !product.image) {
+    return null;
+  }
+
   const { _id, title, price, description, image } = product;
 
   return (

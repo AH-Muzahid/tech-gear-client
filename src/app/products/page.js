@@ -1,25 +1,36 @@
 import ProductCard from "@/components/products/ProductCard";
 import SearchBar from "@/components/products/SearchBar";
-
+import { API_ENDPOINTS } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
 async function getProducts(searchTerm = '') {
   const url = searchTerm
-    ? `https://tech-gear-server-gmu3jry2o-ah-muzahids-projects.vercel.app//products?search=${searchTerm}`
-    : 'https://tech-gear-server-gmu3jry2o-ah-muzahids-projects.vercel.app//products';
+    ? API_ENDPOINTS.productsSearch(searchTerm)
+    : API_ENDPOINTS.products();
 
-  const res = await fetch(url, { cache: 'no-store' });
+  try {
+    const res = await fetch(url, {
+      cache: 'no-store',
+    });
 
-  if (!res.ok) {
-    throw new Error('Failed to fetch products');
+    if (!res.ok) {
+      return [];
+    }
+
+    const data = await res.json();
+
+    if (!Array.isArray(data)) {
+      return [];
+    }
+
+    return data;
+  } catch (error) {
+    return [];
   }
-
-  return res.json();
 }
 
 export default async function ProductsPage(props) {
-
   const searchParams = await props.searchParams;
   const searchTerm = searchParams?.search || '';
 
@@ -27,7 +38,7 @@ export default async function ProductsPage(props) {
   try {
     products = await getProducts(searchTerm);
   } catch (error) {
-    console.log(error);
+    products = [];
   }
 
   return (
@@ -52,8 +63,17 @@ export default async function ProductsPage(props) {
             ))
           ) : (
             <div className="col-span-full text-center py-20">
-              <h3 className="text-2xl font-bold text-gray-400">No products found for "{searchTerm}"</h3>
-              <p className="text-gray-500 mt-2">Try searching with different keywords.</p>
+              {searchTerm ? (
+                <>
+                  <h3 className="text-2xl font-bold text-gray-400">No products found for "{searchTerm}"</h3>
+                  <p className="text-gray-500 mt-2">Try searching with different keywords.</p>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-2xl font-bold text-gray-400">No products available</h3>
+                  <p className="text-gray-500 mt-2">Please check back later.</p>
+                </>
+              )}
             </div>
           )}
         </div>

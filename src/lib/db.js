@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import logger from "./logger";
 
 export const connectDB = async () => {
   try {
@@ -6,8 +7,8 @@ export const connectDB = async () => {
       return;
     }
     await mongoose.connect(process.env.MONGO_URI);
-    console.log("✅ NextAuth Connected to MongoDB");
+    logger.success("NextAuth Connected to MongoDB");
   } catch (error) {
-    console.error("❌ NextAuth DB Connection Error", error);
+    logger.error("NextAuth DB Connection Error", error);
   }
 };

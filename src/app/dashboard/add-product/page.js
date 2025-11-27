@@ -2,11 +2,15 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { FaCloudUploadAlt, FaTag, FaMoneyBillWave, FaAlignLeft, FaLink } from 'react-icons/fa';
+import { API_ENDPOINTS } from "@/lib/api";
 
 export default function AddProductPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
 
   const [formData, setFormData] = useState({
@@ -24,27 +28,39 @@ export default function AddProductPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setError('');
+
+    if (!session) {
+      setError('You must be logged in to add products');
+      setLoading(false);
+      return;
+    }
 
     try {
+      const headers = {
+        'Content-Type': 'application/json',
+      };
 
-      const res = await fetch('https://tech-gear-server-gmu3jry2o-ah-muzahids-projects.vercel.app//products', {
+      if (session.accessToken) {
+        headers.Authorization = `Bearer ${session.accessToken}`;
+      }
+
+      const res = await fetch(API_ENDPOINTS.products(), {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(formData),
       });
 
+      const data = await res.json();
+
       if (res.ok) {
-        alert('✅ Product Added Successfully!');
         router.push('/products');
         router.refresh();
       } else {
-        alert('❌ Failed to add product');
+        setError(data.message || 'Failed to add product. Please try again.');
       }
     } catch (error) {
-      console.error(error);
-      alert('Something went wrong!');
+      setError('Something went wrong! Please try again.');
     } finally {
       setLoading(false);
     }
@@ -59,6 +75,13 @@ export default function AddProductPage() {
           <h2 className="text-3xl font-bold text-white mb-2">Add New Product</h2>
           <p className="text-slate-400">Fill in the details to add a new item to the store.</p>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mx-8 mt-4 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded">
+            <p className="font-medium">{error}</p>
+          </div>
+        )}
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-8 space-y-6">

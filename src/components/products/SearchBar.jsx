@@ -10,20 +10,16 @@ const SearchBar = ({ initialSearch }) => {
   const isMounted = useRef(false);
 
   useEffect(() => {
-
     if (!isMounted.current) {
       isMounted.current = true;
       return;
     }
 
     const delayDebounceFn = setTimeout(() => {
-
-      if (search) {
-        router.push(`/products?search=${search}`);
-      } 
-    
-      else if (window.location.pathname === '/products') {
-        router.push(`/products`);
+      if (search.trim()) {
+        router.push(`/products?search=${encodeURIComponent(search.trim())}`);
+      } else if (window.location.pathname === '/products' && window.location.search) {
+        router.push('/products');
       }
     }, 500);
 
@@ -32,9 +28,9 @@ const SearchBar = ({ initialSearch }) => {
 
   return (
     <div className="max-w-md mx-auto relative">
-      <input 
-        type="text" 
-        placeholder="Search for products..." 
+      <input
+        type="text"
+        placeholder="Search for products..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         className="w-full py-3 px-4 pl-12 rounded-full border border-gray-300 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition shadow-sm"
